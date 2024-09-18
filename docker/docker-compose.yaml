@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  pubsub:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.pubsub
+    container_name: pubsub-emulator
+    ports:
+      - "8085:8085"  # Expose Pub/Sub Emulator port
+    environment:
+      PUBSUB_PROJECT_ID: "sample" 
+
+  microservice:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.microservice
+    container_name: go-microservice
+    environment:
+      - PUBSUB_EMULATOR_HOST=pubsub-emulator:8085 # Points the microservice to the Pub/Sub Emulator
+      - PUBSUB_PROJECT_ID=sample     #  GCP project ID for the emulator
+    depends_on:
+      - pubsub 

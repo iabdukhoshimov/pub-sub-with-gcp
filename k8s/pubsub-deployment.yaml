@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pubsub-emulator
+  labels:
+    app: pubsub-emulator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pubsub-emulator
+  template:
+    metadata:
+      labels:
+        app: pubsub-emulator
+    spec:
+      containers:
+      - name: pubsub-emulator
+        image: google/cloud-sdk:latest
+        args:
+          - "gcloud"
+          - "beta"
+          - "emulators"
+          - "pubsub"
+          - "start"
+          - "--host-port=0.0.0.0:8085"
+        ports:
+        - containerPort: 8085
+        env:
+        - name: PUBSUB_PROJECT_ID
+          value: "sample"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pubsub-emulator-service
+spec:
+  selector:
+    app: pubsub-emulator
+  ports:
+    - protocol: TCP
+      port: 8085
+      targetPort: 8085
+  type: ClusterIP

@@ -5,11 +5,12 @@ import (
 	"fmt"
 
 	"cloud.google.com/go/pubsub"
+	"go.uber.org/zap"
 )
 
-// PublishMessage publishes a message to the topic
 func (cfg *PubSubConfig) PublishMessage(ctx context.Context, data []byte) error {
 	if cfg.Topic == nil {
+		cfg.Logger.Error("Topic not initialized")
 		return fmt.Errorf("topic not initialized")
 	}
 	message := &pubsub.Message{
@@ -19,9 +20,10 @@ func (cfg *PubSubConfig) PublishMessage(ctx context.Context, data []byte) error 
 	result := cfg.Topic.Publish(ctx, message)
 	_, err := result.Get(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to publish message: %v", err)
+		cfg.Logger.Error("Failed to publish message", zap.Error(err))
+		return err
 	}
 
-	fmt.Println("Message published successfully")
+	cfg.Logger.Info("Message published successfully")
 	return nil
 }

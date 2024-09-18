@@ -6,6 +6,7 @@ import (
 
 	pubsub "github.com/iabdukhoshimov/pubsub-microservice-golang/pkg/pubsub"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/zap"
 )
 
 func TestInitClient(t *testing.T) {
@@ -22,8 +23,11 @@ func TestGetOrCreateTopic(t *testing.T) {
 	client, err := pubsub.InitClient(ctx, "test-project")
 	assert.NoError(t, err)
 
+	// Create test logger
+	logger := zap.NewNop() // Nop logger doesn't output logs, suitable for tests
+
 	// Create the PubSubConfig struct
-	cfg := pubsub.NewPubSubConfig(client, "test-topic", "test-subscription")
+	cfg := pubsub.NewPubSubConfig(client, "test-topic", "test-subscription", logger)
 
 	// Test topic creation
 	err = cfg.GetOrCreateTopic(ctx)
@@ -36,8 +40,11 @@ func TestPublishMessage(t *testing.T) {
 	client, err := pubsub.InitClient(ctx, "test-project")
 	assert.NoError(t, err)
 
+	// Create test logger
+	logger := zap.NewNop() // Nop logger for silent testing
+
 	// Create PubSubConfig struct
-	cfg := pubsub.NewPubSubConfig(client, "test-topic", "test-subscription")
+	cfg := pubsub.NewPubSubConfig(client, "test-topic", "test-subscription", logger)
 
 	// Ensure the topic is created
 	err = cfg.GetOrCreateTopic(ctx)

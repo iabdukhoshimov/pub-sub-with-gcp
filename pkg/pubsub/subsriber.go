@@ -2,10 +2,10 @@ package pubsub
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"cloud.google.com/go/pubsub"
+	"go.uber.org/zap"
 )
 
 // SubscribeToTopic subscribes to a Pub/Sub topic and processes messages
@@ -13,7 +13,8 @@ func (cfg *PubSubConfig) SubscribeToTopic(ctx context.Context, messageHandler fu
 	sub := cfg.Client.Subscription(cfg.SubscriptionID)
 	exists, err := sub.Exists(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to check subscription existence: %v", err)
+		cfg.Logger.Error("Failed to check subscription existence", zap.Error(err))
+		return err
 	}
 	if !exists {
 		sub, err = cfg.Client.CreateSubscription(ctx, cfg.SubscriptionID, pubsub.SubscriptionConfig{
@@ -21,18 +22,21 @@ func (cfg *PubSubConfig) SubscribeToTopic(ctx context.Context, messageHandler fu
 			AckDeadline: 10 * time.Second,
 		})
 		if err != nil {
-			return fmt.Errorf("failed to create subscription: %v", err)
+			cfg.Logger.Error("Failed to create subscription", zap.Error(err))
+			return err
 		}
-		fmt.Printf("Subscription %s created\n", cfg.SubscriptionID)
+		cfg.Logger.Info("Subscription created", zap.String("subscriptionID", cfg.SubscriptionID))
 	}
 	cfg.Subscription = sub
 
 	err = sub.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
+		cfg.Logger.Info("Message received", zap.String("messageID", msg.ID))
 		messageHandler(msg.Data)
 		msg.Ack() // Acknowledge the message
 	})
 	if err != nil {
-		return fmt.Errorf("failed to receive messages: %v", err)
+		cfg.Logger.Error("Failed to receive messages", zap.Error(err))
+		return err
 	}
 
 	return nil

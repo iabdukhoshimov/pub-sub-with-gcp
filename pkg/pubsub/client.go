@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"cloud.google.com/go/pubsub"
+	"go.uber.org/zap"
 )
 
 type PubSubConfig struct {
@@ -13,18 +14,19 @@ type PubSubConfig struct {
 	Subscription   *pubsub.Subscription
 	SubscriptionID string
 	TopicID        string
+	Logger         *zap.Logger
 }
 
-// NewPubSubConfig initializes the configuration with the client, topic, and subscription IDs
-func NewPubSubConfig(client *pubsub.Client, topicID string, subscriptionID string) *PubSubConfig {
+// NewPubSubConfig initializes the Pub/Sub config with a logger
+func NewPubSubConfig(client *pubsub.Client, topicID, subscriptionID string, logger *zap.Logger) *PubSubConfig {
 	return &PubSubConfig{
 		Client:         client,
 		TopicID:        topicID,
 		SubscriptionID: subscriptionID,
+		Logger:         logger,
 	}
 }
 
-// InitClient initializes the Pub/Sub client
 func InitClient(ctx context.Context, projectID string) (*pubsub.Client, error) {
 	client, err := pubsub.NewClient(ctx, projectID)
 	if err != nil {
@@ -33,21 +35,23 @@ func InitClient(ctx context.Context, projectID string) (*pubsub.Client, error) {
 	return client, nil
 }
 
-// GetOrCreateTopic ensures that a topic exists or creates it
+// GetOrCreateTopic ensures that the topic exists or creates it
 func (cfg *PubSubConfig) GetOrCreateTopic(ctx context.Context) error {
 	topic := cfg.Client.Topic(cfg.TopicID)
 	exists, err := topic.Exists(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to check if topic exists: %v", err)
+		cfg.Logger.Error("Failed to check if topic exists", zap.Error(err))
+		return err
 	}
 	if !exists {
 		topic, err = cfg.Client.CreateTopic(ctx, cfg.TopicID)
 		if err != nil {
-			return fmt.Errorf("failed to create topic: %v", err)
+			cfg.Logger.Error("Failed to create topic", zap.Error(err))
+			return err
 		}
-		fmt.Printf("Topic %s created\n", cfg.TopicID)
+		cfg.Logger.Info("Topic created", zap.String("topicID", cfg.TopicID))
 	} else {
-		fmt.Printf("Topic %s already exists\n", cfg.TopicID)
+		cfg.Logger.Info("Topic already exists", zap.String("topicID", cfg.TopicID))
 	}
 	cfg.Topic = topic
 	return nil

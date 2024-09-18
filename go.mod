@@ -5,6 +5,7 @@ go 1.22.6
 require (
 	cloud.google.com/go/pubsub v1.43.0
 	github.com/stretchr/testify v1.9.0
+	go.uber.org/zap v1.27.0
 )
 
 require (
@@ -29,6 +30,7 @@ require (
 	go.opentelemetry.io/otel v1.29.0 // indirect
 	go.opentelemetry.io/otel/metric v1.29.0 // indirect
 	go.opentelemetry.io/otel/trace v1.29.0 // indirect
+	go.uber.org/multierr v1.10.0 // indirect
 	golang.org/x/crypto v0.26.0 // indirect
 	golang.org/x/net v0.28.0 // indirect
 	golang.org/x/oauth2 v0.23.0 // indirect

@@ -8,6 +8,7 @@ import (
 	"github.com/iabdukhoshimov/pubsub-microservice-golang/pkg/handlers"
 	pubsub "github.com/iabdukhoshimov/pubsub-microservice-golang/pkg/pubsub"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/zap"
 )
 
 func TestPubSubIntegration(t *testing.T) {
@@ -15,8 +16,11 @@ func TestPubSubIntegration(t *testing.T) {
 	client, err := pubsub.InitClient(ctx, "test-project")
 	assert.NoError(t, err)
 
+	// Create test logger
+	logger := zap.NewNop() // Nop logger for testing
+
 	// Create PubSubConfig struct
-	cfg := pubsub.NewPubSubConfig(client, "test-integration-topic", "test-integration-subscription")
+	cfg := pubsub.NewPubSubConfig(client, "test-integration-topic", "test-integration-subscription", logger)
 
 	// Create or get the topic
 	err = cfg.GetOrCreateTopic(ctx)
@@ -38,7 +42,7 @@ func TestPubSubIntegration(t *testing.T) {
 
 	go func() {
 		err := cfg.SubscribeToTopic(ctx, func(data []byte) {
-			handlers.HandleMessage(data) // Handle message using the message handler
+			handlers.HandleMessage(logger, data) // Pass logger to HandleMessage
 			done <- true
 		})
 		assert.NoError(t, err)

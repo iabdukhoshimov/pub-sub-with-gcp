@@ -2,8 +2,8 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
-	"log"
+
+	"go.uber.org/zap"
 )
 
 // MessagePayload defines the structure of the incoming message
@@ -22,19 +22,20 @@ type Image struct {
 }
 
 // HandleMessage is the function that processes a received message
-func HandleMessage(data []byte) {
+func HandleMessage(logger *zap.Logger, data []byte) {
 	// Parse the JSON message into the MessagePayload struct
 	var payload MessagePayload
 	err := json.Unmarshal(data, &payload)
 	if err != nil {
-		log.Printf("Error parsing message: %v", err)
+		logger.Error("Error parsing message", zap.Error(err))
 		return
 	}
 
-	// Extract and print the necessary fields
-	fmt.Printf("Received message:\n")
-	fmt.Printf("ID: %s\n", payload.ID)
-	fmt.Printf("Type: %s\n", payload.Type)
-	fmt.Printf("Image URL: %s\n", payload.Image.URL)
-	fmt.Printf("Thumbnail URL: %s\n", payload.Thumbnail.URL)
+	// Extract and log the necessary fields using Zap
+	logger.Info("Received message",
+		zap.String("ID", payload.ID),
+		zap.String("Type", payload.Type),
+		zap.String("Image URL", payload.Image.URL),
+		zap.String("Thumbnail URL", payload.Thumbnail.URL),
+	)
 }

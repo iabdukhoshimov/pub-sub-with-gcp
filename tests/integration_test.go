@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/iabdukhoshimov/pubsub-microservice-golang/pkg/handlers"
-	"github.com/iabdukhoshimov/pubsub-microservice-golang/pkg/pubsub"
+	pubsub "github.com/iabdukhoshimov/pubsub-microservice-golang/pkg/pubsub"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -15,8 +15,11 @@ func TestPubSubIntegration(t *testing.T) {
 	client, err := pubsub.InitClient(ctx, "test-project")
 	assert.NoError(t, err)
 
+	// Create PubSubConfig struct
+	cfg := pubsub.NewPubSubConfig(client, "test-integration-topic", "test-integration-subscription")
+
 	// Create or get the topic
-	topic, err := pubsub.GetOrCreateTopic(ctx, client, "test-integration-topic")
+	err = cfg.GetOrCreateTopic(ctx)
 	assert.NoError(t, err)
 
 	// Publish a test message
@@ -27,14 +30,14 @@ func TestPubSubIntegration(t *testing.T) {
 		"image": {"url": "images/0001.jpg", "width": 200, "height": 200},
 		"thumbnail": {"url": "images/thumbnails/0001.jpg", "width": 32, "height": 32}
 	}`)
-	err = pubsub.PublishMessage(ctx, topic, messageData)
+	err = cfg.PublishMessage(ctx, messageData)
 	assert.NoError(t, err)
 
 	// Create a subscription and start receiving messages
 	done := make(chan bool)
 
 	go func() {
-		err := pubsub.SubscribeToTopic(ctx, client, "test-integration-subscription", topic, func(data []byte) {
+		err := cfg.SubscribeToTopic(ctx, func(data []byte) {
 			handlers.HandleMessage(data) // Handle message using the message handler
 			done <- true
 		})

@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	projectID      = "sample"
+	projectID      = "your-gcp-project-id"
 	topicID        = "example-topic"
 	subscriptionID = "example-subscription"
 )
@@ -24,14 +24,17 @@ func main() {
 	}
 	defer client.Close()
 
+	// Create Pub/Sub config
+	cfg := pubsub.NewPubSubConfig(client, topicID, subscriptionID)
+
 	// Create or get the topic
-	topic, err := pubsub.GetOrCreateTopic(ctx, client, topicID)
+	err = cfg.GetOrCreateTopic(ctx)
 	if err != nil {
 		log.Fatalf("Failed to get or create topic: %v", err)
 	}
 
-	// Publish a message to the topic
-	err = pubsub.PublishMessage(ctx, topic, []byte(`{
+	// Publish a message
+	err = cfg.PublishMessage(ctx, []byte(`{
 		"id": "0001",
 		"type": "donut",
 		"name": "Cake",
@@ -42,8 +45,8 @@ func main() {
 		log.Fatalf("Failed to publish message: %v", err)
 	}
 
-	// Subscribe to the topic and process messages using the handler
-	err = pubsub.SubscribeToTopic(ctx, client, subscriptionID, topic, handlers.HandleMessage)
+	// Subscribe and handle messages
+	err = cfg.SubscribeToTopic(ctx, handlers.HandleMessage)
 	if err != nil {
 		log.Fatalf("Failed to subscribe to topic: %v", err)
 	}

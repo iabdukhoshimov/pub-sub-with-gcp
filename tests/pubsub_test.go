@@ -22,10 +22,13 @@ func TestGetOrCreateTopic(t *testing.T) {
 	client, err := pubsub.InitClient(ctx, "test-project")
 	assert.NoError(t, err)
 
+	// Create the PubSubConfig struct
+	cfg := pubsub.NewPubSubConfig(client, "test-topic", "test-subscription")
+
 	// Test topic creation
-	topic, err := pubsub.GetOrCreateTopic(ctx, client, "test-topic")
+	err = cfg.GetOrCreateTopic(ctx)
 	assert.NoError(t, err, "Error should be nil when creating topic")
-	assert.NotNil(t, topic, "Topic should not be nil")
+	assert.NotNil(t, cfg.Topic, "Topic should not be nil")
 }
 
 func TestPublishMessage(t *testing.T) {
@@ -33,11 +36,15 @@ func TestPublishMessage(t *testing.T) {
 	client, err := pubsub.InitClient(ctx, "test-project")
 	assert.NoError(t, err)
 
-	topic, err := pubsub.GetOrCreateTopic(ctx, client, "test-topic")
+	// Create PubSubConfig struct
+	cfg := pubsub.NewPubSubConfig(client, "test-topic", "test-subscription")
+
+	// Ensure the topic is created
+	err = cfg.GetOrCreateTopic(ctx)
 	assert.NoError(t, err)
 
 	// Test publishing a message
 	messageData := []byte(`{"id": "test-id", "type": "test-type"}`)
-	err = pubsub.PublishMessage(ctx, topic, messageData)
+	err = cfg.PublishMessage(ctx, messageData)
 	assert.NoError(t, err, "Error should be nil when publishing message")
 }

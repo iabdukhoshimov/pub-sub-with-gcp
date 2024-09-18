@@ -8,28 +8,26 @@ import (
 	"cloud.google.com/go/pubsub"
 )
 
-// SubscribeToTopic subscribes to a Pub/Sub topic and handles incoming messages
-func SubscribeToTopic(ctx context.Context, client *pubsub.Client, subscriptionID string, topic *pubsub.Topic, messageHandler func([]byte)) error {
-	sub := client.Subscription(subscriptionID)
+// SubscribeToTopic subscribes to a Pub/Sub topic and processes messages
+func (cfg *PubSubConfig) SubscribeToTopic(ctx context.Context, messageHandler func([]byte)) error {
+	sub := cfg.Client.Subscription(cfg.SubscriptionID)
 	exists, err := sub.Exists(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to check subscription existence: %v", err)
 	}
 	if !exists {
-		sub, err = client.CreateSubscription(ctx, subscriptionID, pubsub.SubscriptionConfig{
-			Topic:       topic,
+		sub, err = cfg.Client.CreateSubscription(ctx, cfg.SubscriptionID, pubsub.SubscriptionConfig{
+			Topic:       cfg.Topic,
 			AckDeadline: 10 * time.Second,
 		})
 		if err != nil {
 			return fmt.Errorf("failed to create subscription: %v", err)
 		}
-		fmt.Printf("Subscription %s created\n", subscriptionID)
-	} else {
-		fmt.Printf("Subscription %s already exists\n", subscriptionID)
+		fmt.Printf("Subscription %s created\n", cfg.SubscriptionID)
 	}
+	cfg.Subscription = sub
 
 	err = sub.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
-		// Call the provided message handler function
 		messageHandler(msg.Data)
 		msg.Ack() // Acknowledge the message
 	})
